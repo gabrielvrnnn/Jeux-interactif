@@ -55,27 +55,65 @@ body {
   backdrop-filter: blur(8px);
 }
 
-input,
-button {
-  width: 100%;
-  margin-top: 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 12px;
-  font-size: 1rem;
+.counter-wrap {
+  margin-top: 14px;
 }
 
-button {
+.counter-label {
+  display: block;
+  font-size: 0.95rem;
+  opacity: 0.88;
+}
+
+.counter-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.counter-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.counter-value {
+  min-width: 54px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.start-btn {
+  width: 100%;
+  margin-top: 18px;
+  border-radius: 12px;
   border: none;
+  padding: 12px;
+  font-size: 1rem;
   color: white;
   font-weight: 600;
   background: linear-gradient(90deg, #2f80ff, #3ad7ff);
 }
 
 .hint {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   font-size: clamp(1.1rem, 4vw, 1.6rem);
   font-weight: 600;
   text-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.hint small {
+  font-size: 0.95rem;
+  opacity: 0.85;
 }
 
 .touch-layer {

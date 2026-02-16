@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const PHASE = {
   SETUP: 'setup',
@@ -8,6 +8,7 @@ const PHASE = {
   RESULT: 'result',
 };
 
+const START_DELAY_MS = 2500;
 const SPIN_MS = 2000;
 const ELIMINATION_MS = 550;
 
@@ -27,36 +28,52 @@ export default function App() {
   const [roundTouches, setRoundTouches] = useState([]);
   const [winnerIds, setWinnerIds] = useState([]);
   const [eliminatedIds, setEliminatedIds] = useState([]);
+  const [isCountdownRunning, setIsCountdownRunning] = useState(false);
 
-  const knownTouchesRef = useRef(new Map());
-  const eliminationTimerRef = useRef(null);
   const spinTimerRef = useRef(null);
+  const eliminationTimerRef = useRef(null);
+  const startDelayTimerRef = useRef(null);
+
+  const clearTimers = () => {
+    clearTimeout(startDelayTimerRef.current);
+    clearTimeout(spinTimerRef.current);
+    clearInterval(eliminationTimerRef.current);
+  };
 
   const resetRound = () => {
+    clearTimers();
     setPhase(PHASE.SETUP);
     setActiveTouches([]);
     setRoundTouches([]);
     setWinnerIds([]);
     setEliminatedIds([]);
-    knownTouchesRef.current = new Map();
+    setIsCountdownRunning(false);
   };
 
-  useEffect(() => () => {
-    clearTimeout(spinTimerRef.current);
-    clearInterval(eliminationTimerRef.current);
-  }, []);
+  useEffect(() => clearTimers, []);
 
   useEffect(() => {
     if (phase !== PHASE.COLLECTING) {
       return;
     }
 
-    if (activeTouches.length === 0 && knownTouchesRef.current.size > 0) {
-      const frozenTouches = Array.from(knownTouchesRef.current.values());
-      setRoundTouches(frozenTouches);
-      setPhase(PHASE.SPINNING);
+    if (activeTouches.length === 0) {
+      clearTimeout(startDelayTimerRef.current);
+      setIsCountdownRunning(false);
+      return;
     }
-  }, [activeTouches.length, phase]);
+
+    if (isCountdownRunning) {
+      return;
+    }
+
+    setIsCountdownRunning(true);
+    startDelayTimerRef.current = setTimeout(() => {
+      setRoundTouches(activeTouches);
+      setPhase(PHASE.SPINNING);
+      setIsCountdownRunning(false);
+    }, START_DELAY_MS);
+  }, [activeTouches, isCountdownRunning, phase]);
 
   useEffect(() => {
     if (phase !== PHASE.SPINNING || roundTouches.length === 0) {
@@ -65,9 +82,10 @@ export default function App() {
 
     spinTimerRef.current = setTimeout(() => {
       const ids = roundTouches.map((touch) => touch.id);
+      const safeWinnerCount = Math.max(1, Math.min(winnerCount, ids.length));
       const shuffled = shuffle(ids);
-      const kept = shuffled.slice(0, Math.min(winnerCount, ids.length));
-      const out = shuffled.slice(Math.min(winnerCount, ids.length));
+      const kept = shuffled.slice(0, safeWinnerCount);
+      const out = shuffled.slice(safeWinnerCount);
 
       setWinnerIds(kept);
       setEliminatedIds([]);
@@ -89,14 +107,13 @@ export default function App() {
     return () => clearTimeout(spinTimerRef.current);
   }, [phase, roundTouches, winnerCount]);
 
-  const maxWinnersAllowed = useMemo(() => Math.max(1, roundTouches.length || activeTouches.length || 10), [activeTouches.length, roundTouches.length]);
-
   const handleStart = () => {
-    knownTouchesRef.current = new Map();
+    clearTimers();
+    setActiveTouches([]);
+    setRoundTouches([]);
     setWinnerIds([]);
     setEliminatedIds([]);
-    setRoundTouches([]);
-    setActiveTouches([]);
+    setIsCountdownRunning(false);
     setPhase(PHASE.COLLECTING);
   };
 
@@ -105,15 +122,11 @@ export default function App() {
       return;
     }
 
-    const nextTouches = Array.from(event.touches).map((touch) => {
-      const next = {
-        id: touch.identifier,
-        x: touch.clientX,
-        y: touch.clientY,
-      };
-      knownTouchesRef.current.set(touch.identifier, next);
-      return next;
-    });
+    const nextTouches = Array.from(event.touches).map((touch) => ({
+      id: touch.identifier,
+      x: touch.clientX,
+      y: touch.clientY,
+    }));
 
     setActiveTouches(nextTouches);
   };
@@ -133,31 +146,46 @@ export default function App() {
           <div className="card">
             <h1>Finger Picker</h1>
             <p>Choisissez combien de doigts doivent rester.</p>
-            <label htmlFor="winnerCount">Doigts conservés</label>
-            <input
-              id="winnerCount"
-              type="number"
-              min="1"
-              max={maxWinnersAllowed}
-              value={winnerCount}
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                setWinnerCount(Number.isNaN(value) ? 1 : Math.max(1, value));
-              }}
-            />
-            <button type="button" onClick={handleStart}>Start</button>
+
+            <div className="counter-wrap">
+              <span className="counter-label">Doigts conservés</span>
+              <div className="counter-row">
+                <button
+                  type="button"
+                  className="counter-btn"
+                  onClick={() => setWinnerCount((prev) => Math.max(1, prev - 1))}
+                >
+                  −
+                </button>
+                <span className="counter-value">{winnerCount}</span>
+                <button
+                  type="button"
+                  className="counter-btn"
+                  onClick={() => setWinnerCount((prev) => Math.min(20, prev + 1))}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <button type="button" className="start-btn" onClick={handleStart}>Start</button>
           </div>
         )}
 
         {phase === PHASE.COLLECTING && (
-          <div className="hint">Posez vos doigts sur l&apos;écran 👇</div>
+          <div className="hint">
+            {activeTouches.length === 0
+              ? 'Posez vos doigts sur l\'écran 👇'
+              : 'Gardez vos doigts appuyés...'}
+            {isCountdownRunning && <small>Tirage dans ~2.5s</small>}
+          </div>
         )}
 
         {phase === PHASE.RESULT && (
           <div className="card">
-            <h2>Résultat prêt</h2>
+            <h2>Résultat</h2>
             <p>{winnerIds.length} doigt(s) conservé(s).</p>
-            <button type="button" onClick={resetRound}>Recommencer</button>
+            <button type="button" className="start-btn" onClick={resetRound}>Recommencer</button>
           </div>
         )}
       </section>
