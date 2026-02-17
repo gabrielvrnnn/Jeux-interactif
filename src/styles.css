@@ -258,17 +258,52 @@ body {
 
 .coin {
   margin: 20px auto 0;
-  width: 150px;
-  height: 150px;
+  width: 158px;
+  height: 158px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.9);
-  background: linear-gradient(160deg, #2f80ff, #3ad7ff);
+  border: 4px solid rgba(186, 232, 255, 0.8);
+  background: radial-gradient(circle at 30% 25%, #79e4ff 0%, #2f80ff 60%, #1a2f6a 100%);
   display: grid;
   place-items: center;
-  color: #fff;
-  font-size: 2rem;
-  font-weight: 800;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 24px rgba(255, 255, 255, 0.24);
+  overflow: hidden;
+}
+
+.coin::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  border: 2px solid rgba(235, 250, 255, 0.65);
+}
+
+.coin-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #eaf8ff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1;
+}
+
+.coin-face.active {
+  opacity: 1;
+}
+
+.coin-symbol {
+  font-size: 3rem;
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(234, 248, 255, 0.85);
+}
+
+.coin-face small {
+  margin-top: -10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  font-weight: 700;
 }
 
 .coin.flipping {

@@ -330,7 +330,16 @@ export default function App() {
           <div className="card coin-card">
             <h2>Pile ou Face</h2>
             <p>Un tirage simple et rapide.</p>
-            <div className={`coin ${isFlippingCoin ? 'flipping' : ''}`}><span>{coinResult ?? '?'}</span></div>
+            <div className={`coin ${isFlippingCoin ? 'flipping' : ''}`}>
+              <div className={`coin-face ${coinResult === 'Pile' || coinResult === null ? 'active' : ''}`}>
+                <span className="coin-symbol">₪</span>
+                <small>PILE</small>
+              </div>
+              <div className={`coin-face ${coinResult === 'Face' ? 'active' : ''}`}>
+                <span className="coin-symbol">★</span>
+                <small>FACE</small>
+              </div>
+            </div>
             <button type="button" className="start-btn" onClick={launchCoinFlip}>{isFlippingCoin ? 'Lancement...' : 'Lancer la pièce'}</button>
             {coinResult && !isFlippingCoin && <p className="coin-result">Résultat : {coinResult}</p>}
           </div>
