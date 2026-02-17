@@ -262,7 +262,7 @@ export default function App() {
       onTouchCancel={updateFromTouchEvent}
     >
       <header className="topbar">
-        <h1>Jeux de Hasard</h1>
+        <h1>Quick Picks</h1>
         <div className="tabs tabs-3">
           <button type="button" className={`tab-btn ${currentGame === GAME.FINGER ? 'active' : ''}`} onClick={() => handleGameChange(GAME.FINGER)}>Doigts</button>
           <button type="button" className={`tab-btn ${currentGame === GAME.COIN ? 'active' : ''}`} onClick={() => handleGameChange(GAME.COIN)}>Pile ou Face</button>
