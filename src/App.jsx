@@ -31,6 +31,10 @@ const shuffle = (array) => {
 
 const rollDiceSet = (count) => Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 
+const rollUnlockedDice = (currentValues, currentLocked) => currentValues.map((value, index) => (
+  currentLocked[index] ? value : Math.floor(Math.random() * 6) + 1
+));
+
 
 const PIP_MAP = {
   1: [4],
@@ -57,6 +61,7 @@ export default function App() {
 
   const [diceCount, setDiceCount] = useState(1);
   const [diceValues, setDiceValues] = useState([1]);
+  const [lockedDice, setLockedDice] = useState([false]);
   const [isRollingDice, setIsRollingDice] = useState(false);
 
   const activeTouchesRef = useRef([]);
@@ -92,6 +97,7 @@ export default function App() {
     clearTimeout(diceRollTimerRef.current);
     setIsRollingDice(false);
     setDiceValues(rollDiceSet(diceCount));
+    setLockedDice(Array.from({ length: diceCount }, () => false));
   };
 
   useEffect(
@@ -105,6 +111,7 @@ export default function App() {
 
   useEffect(() => {
     setDiceValues(rollDiceSet(diceCount));
+    setLockedDice(Array.from({ length: diceCount }, () => false));
   }, [diceCount]);
 
   useEffect(() => {
@@ -227,11 +234,23 @@ export default function App() {
       return;
     }
 
+    if (lockedDice.every(Boolean)) {
+      return;
+    }
+
     setIsRollingDice(true);
     diceRollTimerRef.current = setTimeout(() => {
-      setDiceValues(rollDiceSet(diceCount));
+      setDiceValues((prev) => rollUnlockedDice(prev, lockedDice));
       setIsRollingDice(false);
     }, DICE_ROLL_MS);
+  };
+
+  const toggleDieLock = (index) => {
+    if (isRollingDice) {
+      return;
+    }
+
+    setLockedDice((prev) => prev.map((isLocked, idx) => (idx === index ? !isLocked : isLocked)));
   };
 
   return (
@@ -335,7 +354,12 @@ export default function App() {
 
             <div className="dice-grid">
               {diceValues.map((value, index) => (
-                <div key={`${value}-${index}`} className={`die ${isRollingDice ? 'rolling' : ''}`}>
+                <button
+                  type="button"
+                  key={`${value}-${index}`}
+                  className={`die ${isRollingDice ? 'rolling' : ''} ${lockedDice[index] ? 'locked' : ''}`}
+                  onClick={() => toggleDieLock(index)}
+                >
                   <div className="die-face">
                     {Array.from({ length: 9 }).map((_, cellIndex) => (
                       <span
@@ -344,9 +368,11 @@ export default function App() {
                       />
                     ))}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
+
+            <p className="dice-help">Touchez un dé pour le figer / défiger.</p>
 
             <button type="button" className="start-btn" onClick={launchDiceRoll}>
               {isRollingDice ? 'Lancement...' : 'Lancer les dés'}

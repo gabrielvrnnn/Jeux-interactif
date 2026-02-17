@@ -90,6 +90,12 @@ body {
   display: grid;
   place-items: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  padding: 0;
+}
+
+.die.locked {
+  border-color: #3ad7ff;
+  box-shadow: 0 0 0 2px rgba(58, 215, 255, 0.35), 0 8px 24px rgba(20, 94, 151, 0.45);
 }
 
 .die-face {
@@ -273,6 +279,13 @@ body {
   margin-top: 14px;
   font-weight: 700;
   color: #9ce9ff;
+}
+
+.dice-help {
+  margin-top: 12px;
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  color: #c7e9ff;
 }
 
 @keyframes pulse {
