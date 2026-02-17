@@ -27,6 +27,7 @@ body {
   touch-action: none;
   overscroll-behavior: none;
   user-select: none;
+  overflow-y: auto;
 }
 
 .topbar {
@@ -76,14 +77,14 @@ body {
 }
 
 .dice-grid {
-  margin-top: 18px;
+  margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: clamp(6px, 1.6vw, 10px);
 }
 
 .die {
-  height: 88px;
+  height: clamp(60px, 11vw, 88px);
   border-radius: 16px;
   border: 2px solid rgba(255, 255, 255, 0.32);
   background: linear-gradient(155deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08));
@@ -131,8 +132,10 @@ body {
   z-index: 2;
   display: grid;
   place-items: center;
+  align-content: start;
   pointer-events: none;
-  padding: 96px 24px 24px;
+  padding: 96px 16px 20px;
+  overflow-y: auto;
 }
 
 .card,
@@ -143,11 +146,11 @@ body {
 }
 
 .card {
-  width: min(90vw, 360px);
+  width: min(92vw, 400px);
   background: rgba(9, 14, 29, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
-  padding: 22px;
+  padding: clamp(14px, 2.8vw, 22px);
   backdrop-filter: blur(8px);
 }
 
@@ -248,8 +251,9 @@ body {
   inset: 0;
   z-index: 2;
   display: grid;
-  place-items: center;
-  padding: 96px 24px 24px;
+  place-items: start center;
+  padding: 96px 16px 20px;
+  overflow-y: auto;
 }
 
 .coin-card {
@@ -344,5 +348,26 @@ body {
   }
   to {
     transform: rotateY(360deg);
+  }
+}
+
+@media (max-height: 760px) {
+  .topbar {
+    padding-top: 10px;
+    gap: 8px;
+  }
+
+  .topbar h1 {
+    font-size: 1.1rem;
+  }
+
+  .tab-btn {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
+
+  .start-btn {
+    margin-top: 12px;
+    padding: 10px;
   }
 }
