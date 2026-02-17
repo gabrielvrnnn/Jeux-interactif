@@ -8,7 +8,7 @@ const PHASE = {
   RESULT: 'result',
 };
 
-const START_DELAY_MS = 2500;
+const START_DELAY_MS = 2000;
 const SPIN_MS = 2000;
 const ELIMINATION_MS = 550;
 
@@ -58,14 +58,14 @@ export default function App() {
       return;
     }
 
+    clearTimeout(startDelayTimerRef.current);
+
     if (activeTouches.length === 0) {
-      clearTimeout(startDelayTimerRef.current);
       setIsCountdownRunning(false);
       return;
     }
 
     setIsCountdownRunning(true);
-    clearTimeout(startDelayTimerRef.current);
 
     startDelayTimerRef.current = setTimeout(() => {
       const ids = activeTouchesRef.current.map((touch) => touch.id);
@@ -78,7 +78,7 @@ export default function App() {
       setPhase(PHASE.SPINNING);
       setIsCountdownRunning(false);
     }, START_DELAY_MS);
-  }, [activeTouches, phase]);
+  }, [activeTouches.length, phase]);
 
   useEffect(() => {
     if (phase !== PHASE.SPINNING || participantIds.length === 0) {
@@ -179,8 +179,8 @@ export default function App() {
           <div className="hint">
             {activeTouches.length === 0
               ? 'Posez vos doigts sur l\'écran 👇'
-              : 'Gardez vos doigts appuyés et immobiles...'}
-            {isCountdownRunning && <small>Tirage dans ~2.5s</small>}
+              : 'Le tirage démarre 2s après le dernier doigt ajouté/retiré.'}
+            {isCountdownRunning && <small>Tirage dans ~2s</small>}
           </div>
         )}
 
