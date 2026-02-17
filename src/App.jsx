@@ -197,12 +197,13 @@ export default function App() {
         {activeTouches.map((touch) => {
           const isWinner = winnerIds.includes(touch.id);
           const isEliminated = eliminatedIds.includes(touch.id);
+          const isLoserAtResult = phase === PHASE.RESULT && winnerIds.length > 0 && !isWinner;
 
           return (
             <span
               key={touch.id}
-              className={`touch-circle ${phase === PHASE.SPINNING ? 'spinning' : ''} ${isWinner ? 'winner' : ''} ${isEliminated ? 'eliminated' : ''}`}
-              style={{ transform: `translate(${touch.x - 35}px, ${touch.y - 35}px)` }}
+              className={`touch-circle ${phase === PHASE.SPINNING ? 'spinning' : ''} ${isWinner ? 'winner' : ''} ${isEliminated || isLoserAtResult ? 'eliminated' : ''}`}
+              style={{ transform: `translate(${touch.x - 55}px, ${touch.y - 55}px)` }}
             />
           );
         })}
