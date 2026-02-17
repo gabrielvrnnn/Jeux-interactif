@@ -11,12 +11,14 @@ const PHASE = {
 const GAME = {
   FINGER: 'finger',
   COIN: 'coin',
+  DICE: 'dice',
 };
 
 const START_DELAY_MS = 2000;
 const SPIN_MS = 2000;
 const ELIMINATION_MS = 550;
 const COIN_FLIP_MS = 1200;
+const DICE_ROLL_MS = 900;
 
 const shuffle = (array) => {
   const result = [...array];
@@ -26,6 +28,8 @@ const shuffle = (array) => {
   }
   return result;
 };
+
+const rollDiceSet = (count) => Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 
 export default function App() {
   const [currentGame, setCurrentGame] = useState(GAME.FINGER);
@@ -41,11 +45,16 @@ export default function App() {
   const [coinResult, setCoinResult] = useState(null);
   const [isFlippingCoin, setIsFlippingCoin] = useState(false);
 
+  const [diceCount, setDiceCount] = useState(1);
+  const [diceValues, setDiceValues] = useState([1]);
+  const [isRollingDice, setIsRollingDice] = useState(false);
+
   const activeTouchesRef = useRef([]);
   const startDelayTimerRef = useRef(null);
   const spinTimerRef = useRef(null);
   const eliminationTimerRef = useRef(null);
   const coinFlipTimerRef = useRef(null);
+  const diceRollTimerRef = useRef(null);
 
   const clearFingerTimers = () => {
     clearTimeout(startDelayTimerRef.current);
@@ -69,20 +78,27 @@ export default function App() {
     setIsFlippingCoin(false);
   };
 
+  const resetDice = () => {
+    clearTimeout(diceRollTimerRef.current);
+    setIsRollingDice(false);
+    setDiceValues(rollDiceSet(diceCount));
+  };
+
   useEffect(
     () => () => {
       clearFingerTimers();
       clearTimeout(coinFlipTimerRef.current);
+      clearTimeout(diceRollTimerRef.current);
     },
     [],
   );
 
   useEffect(() => {
-    if (currentGame !== GAME.FINGER) {
-      return;
-    }
+    setDiceValues(rollDiceSet(diceCount));
+  }, [diceCount]);
 
-    if (phase !== PHASE.COLLECTING) {
+  useEffect(() => {
+    if (currentGame !== GAME.FINGER || phase !== PHASE.COLLECTING) {
       return;
     }
 
@@ -109,11 +125,7 @@ export default function App() {
   }, [activeTouches.length, currentGame, phase]);
 
   useEffect(() => {
-    if (currentGame !== GAME.FINGER) {
-      return;
-    }
-
-    if (phase !== PHASE.SPINNING || participantIds.length === 0) {
+    if (currentGame !== GAME.FINGER || phase !== PHASE.SPINNING || participantIds.length === 0) {
       return;
     }
 
@@ -175,12 +187,15 @@ export default function App() {
   const handleGameChange = (game) => {
     setCurrentGame(game);
 
-    if (game === GAME.FINGER) {
-      resetCoin();
-      return;
+    if (game !== GAME.FINGER) {
+      resetFingerRound();
     }
-
-    resetFingerRound();
+    if (game !== GAME.COIN) {
+      resetCoin();
+    }
+    if (game !== GAME.DICE) {
+      resetDice();
+    }
   };
 
   const launchCoinFlip = () => {
@@ -197,6 +212,18 @@ export default function App() {
     }, COIN_FLIP_MS);
   };
 
+  const launchDiceRoll = () => {
+    if (isRollingDice) {
+      return;
+    }
+
+    setIsRollingDice(true);
+    diceRollTimerRef.current = setTimeout(() => {
+      setDiceValues(rollDiceSet(diceCount));
+      setIsRollingDice(false);
+    }, DICE_ROLL_MS);
+  };
+
   return (
     <main
       className="app"
@@ -207,21 +234,10 @@ export default function App() {
     >
       <header className="topbar">
         <h1>Jeux de Hasard</h1>
-        <div className="tabs">
-          <button
-            type="button"
-            className={`tab-btn ${currentGame === GAME.FINGER ? 'active' : ''}`}
-            onClick={() => handleGameChange(GAME.FINGER)}
-          >
-            Doigts
-          </button>
-          <button
-            type="button"
-            className={`tab-btn ${currentGame === GAME.COIN ? 'active' : ''}`}
-            onClick={() => handleGameChange(GAME.COIN)}
-          >
-            Pile ou Face
-          </button>
+        <div className="tabs tabs-3">
+          <button type="button" className={`tab-btn ${currentGame === GAME.FINGER ? 'active' : ''}`} onClick={() => handleGameChange(GAME.FINGER)}>Doigts</button>
+          <button type="button" className={`tab-btn ${currentGame === GAME.COIN ? 'active' : ''}`} onClick={() => handleGameChange(GAME.COIN)}>Pile ou Face</button>
+          <button type="button" className={`tab-btn ${currentGame === GAME.DICE ? 'active' : ''}`} onClick={() => handleGameChange(GAME.DICE)}>Dés</button>
         </div>
       </header>
 
@@ -232,28 +248,14 @@ export default function App() {
               <div className="card">
                 <h2>Sélecteur de doigts</h2>
                 <p>Choisissez combien de doigts doivent rester.</p>
-
                 <div className="counter-wrap">
                   <span className="counter-label">Doigts conservés</span>
                   <div className="counter-row">
-                    <button
-                      type="button"
-                      className="counter-btn"
-                      onClick={() => setWinnerCount((prev) => Math.max(1, prev - 1))}
-                    >
-                      −
-                    </button>
+                    <button type="button" className="counter-btn" onClick={() => setWinnerCount((prev) => Math.max(1, prev - 1))}>−</button>
                     <span className="counter-value">{winnerCount}</span>
-                    <button
-                      type="button"
-                      className="counter-btn"
-                      onClick={() => setWinnerCount((prev) => Math.min(20, prev + 1))}
-                    >
-                      +
-                    </button>
+                    <button type="button" className="counter-btn" onClick={() => setWinnerCount((prev) => Math.min(20, prev + 1))}>+</button>
                   </div>
                 </div>
-
                 <button type="button" className="start-btn" onClick={handleStart}>Start</button>
               </div>
             )}
@@ -299,16 +301,37 @@ export default function App() {
           <div className="card coin-card">
             <h2>Pile ou Face</h2>
             <p>Un tirage simple et rapide.</p>
+            <div className={`coin ${isFlippingCoin ? 'flipping' : ''}`}><span>{coinResult ?? '?'}</span></div>
+            <button type="button" className="start-btn" onClick={launchCoinFlip}>{isFlippingCoin ? 'Lancement...' : 'Lancer la pièce'}</button>
+            {coinResult && !isFlippingCoin && <p className="coin-result">Résultat : {coinResult}</p>}
+          </div>
+        </section>
+      )}
 
-            <div className={`coin ${isFlippingCoin ? 'flipping' : ''}`}>
-              <span>{coinResult ?? '?'}</span>
+      {currentGame === GAME.DICE && (
+        <section className="coin-layout">
+          <div className="card coin-card">
+            <h2>Lancer de dés</h2>
+            <p>Choisis de 1 à 6 dés puis lance.</p>
+
+            <div className="counter-wrap">
+              <span className="counter-label">Nombre de dés</span>
+              <div className="counter-row">
+                <button type="button" className="counter-btn" onClick={() => setDiceCount((prev) => Math.max(1, prev - 1))}>−</button>
+                <span className="counter-value">{diceCount}</span>
+                <button type="button" className="counter-btn" onClick={() => setDiceCount((prev) => Math.min(6, prev + 1))}>+</button>
+              </div>
             </div>
 
-            <button type="button" className="start-btn" onClick={launchCoinFlip}>
-              {isFlippingCoin ? 'Lancement...' : 'Lancer la pièce'}
-            </button>
+            <div className="dice-grid">
+              {diceValues.map((value, index) => (
+                <div key={`${value}-${index}`} className={`die ${isRollingDice ? 'rolling' : ''}`}>{value}</div>
+              ))}
+            </div>
 
-            {coinResult && !isFlippingCoin && <p className="coin-result">Résultat : {coinResult}</p>}
+            <button type="button" className="start-btn" onClick={launchDiceRoll}>
+              {isRollingDice ? 'Lancement...' : 'Lancer les dés'}
+            </button>
           </div>
         </section>
       )}

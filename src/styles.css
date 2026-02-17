@@ -69,6 +69,35 @@ body {
   border-color: transparent;
 }
 
+
+.tabs-3 .tab-btn {
+  font-size: 0.92rem;
+  padding-inline: 8px;
+}
+
+.dice-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.die {
+  height: 74px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.die.rolling {
+  animation: pulse 0.35s linear infinite;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
