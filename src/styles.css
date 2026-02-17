@@ -132,8 +132,8 @@ body {
   will-change: transform;
 }
 
-.touch-circle.rotating {
-  animation: spin 0.7s linear infinite;
+.touch-circle.spinning {
+  animation: pulse 0.8s ease-in-out infinite;
 }
 
 .touch-circle.winner {
@@ -145,11 +145,17 @@ body {
   opacity: 0;
 }
 
-@keyframes spin {
-  from {
-    rotate: 0deg;
+@keyframes pulse {
+  0% {
+    scale: 1;
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.15);
   }
-  to {
-    rotate: 360deg;
+  50% {
+    scale: 1.12;
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.45);
+  }
+  100% {
+    scale: 1;
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0.15);
   }
 }

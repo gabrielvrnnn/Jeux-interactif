@@ -25,14 +25,15 @@ export default function App() {
   const [phase, setPhase] = useState(PHASE.SETUP);
   const [winnerCount, setWinnerCount] = useState(1);
   const [activeTouches, setActiveTouches] = useState([]);
-  const [roundTouches, setRoundTouches] = useState([]);
+  const [participantIds, setParticipantIds] = useState([]);
   const [winnerIds, setWinnerIds] = useState([]);
   const [eliminatedIds, setEliminatedIds] = useState([]);
   const [isCountdownRunning, setIsCountdownRunning] = useState(false);
 
+  const activeTouchesRef = useRef([]);
+  const startDelayTimerRef = useRef(null);
   const spinTimerRef = useRef(null);
   const eliminationTimerRef = useRef(null);
-  const startDelayTimerRef = useRef(null);
 
   const clearTimers = () => {
     clearTimeout(startDelayTimerRef.current);
@@ -44,7 +45,7 @@ export default function App() {
     clearTimers();
     setPhase(PHASE.SETUP);
     setActiveTouches([]);
-    setRoundTouches([]);
+    setParticipantIds([]);
     setWinnerIds([]);
     setEliminatedIds([]);
     setIsCountdownRunning(false);
@@ -63,27 +64,30 @@ export default function App() {
       return;
     }
 
-    if (isCountdownRunning) {
-      return;
-    }
-
     setIsCountdownRunning(true);
+    clearTimeout(startDelayTimerRef.current);
+
     startDelayTimerRef.current = setTimeout(() => {
-      setRoundTouches(activeTouches);
+      const ids = activeTouchesRef.current.map((touch) => touch.id);
+      if (ids.length === 0) {
+        setIsCountdownRunning(false);
+        return;
+      }
+
+      setParticipantIds(ids);
       setPhase(PHASE.SPINNING);
       setIsCountdownRunning(false);
     }, START_DELAY_MS);
-  }, [activeTouches, isCountdownRunning, phase]);
+  }, [activeTouches, phase]);
 
   useEffect(() => {
-    if (phase !== PHASE.SPINNING || roundTouches.length === 0) {
+    if (phase !== PHASE.SPINNING || participantIds.length === 0) {
       return;
     }
 
     spinTimerRef.current = setTimeout(() => {
-      const ids = roundTouches.map((touch) => touch.id);
-      const safeWinnerCount = Math.max(1, Math.min(winnerCount, ids.length));
-      const shuffled = shuffle(ids);
+      const safeWinnerCount = Math.max(1, Math.min(winnerCount, participantIds.length));
+      const shuffled = shuffle(participantIds);
       const kept = shuffled.slice(0, safeWinnerCount);
       const out = shuffled.slice(safeWinnerCount);
 
@@ -105,12 +109,12 @@ export default function App() {
     }, SPIN_MS);
 
     return () => clearTimeout(spinTimerRef.current);
-  }, [phase, roundTouches, winnerCount]);
+  }, [participantIds, phase, winnerCount]);
 
   const handleStart = () => {
     clearTimers();
     setActiveTouches([]);
-    setRoundTouches([]);
+    setParticipantIds([]);
     setWinnerIds([]);
     setEliminatedIds([]);
     setIsCountdownRunning(false);
@@ -118,7 +122,7 @@ export default function App() {
   };
 
   const updateFromTouchEvent = (event) => {
-    if (phase !== PHASE.COLLECTING) {
+    if (![PHASE.COLLECTING, PHASE.SPINNING, PHASE.ELIMINATING].includes(phase)) {
       return;
     }
 
@@ -128,10 +132,9 @@ export default function App() {
       y: touch.clientY,
     }));
 
+    activeTouchesRef.current = nextTouches;
     setActiveTouches(nextTouches);
   };
-
-  const displayTouches = phase === PHASE.COLLECTING ? activeTouches : roundTouches;
 
   return (
     <main
@@ -176,7 +179,7 @@ export default function App() {
           <div className="hint">
             {activeTouches.length === 0
               ? 'Posez vos doigts sur l\'écran 👇'
-              : 'Gardez vos doigts appuyés...'}
+              : 'Gardez vos doigts appuyés et immobiles...'}
             {isCountdownRunning && <small>Tirage dans ~2.5s</small>}
           </div>
         )}
@@ -191,14 +194,14 @@ export default function App() {
       </section>
 
       <section className="touch-layer">
-        {displayTouches.map((touch) => {
+        {activeTouches.map((touch) => {
           const isWinner = winnerIds.includes(touch.id);
           const isEliminated = eliminatedIds.includes(touch.id);
 
           return (
             <span
               key={touch.id}
-              className={`touch-circle ${phase === PHASE.SPINNING ? 'rotating' : ''} ${isWinner ? 'winner' : ''} ${isEliminated ? 'eliminated' : ''}`}
+              className={`touch-circle ${phase === PHASE.SPINNING ? 'spinning' : ''} ${isWinner ? 'winner' : ''} ${isEliminated ? 'eliminated' : ''}`}
               style={{ transform: `translate(${touch.x - 35}px, ${touch.y - 35}px)` }}
             />
           );
