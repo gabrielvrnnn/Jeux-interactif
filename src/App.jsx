@@ -8,9 +8,15 @@ const PHASE = {
   RESULT: 'result',
 };
 
+const GAME = {
+  FINGER: 'finger',
+  COIN: 'coin',
+};
+
 const START_DELAY_MS = 2000;
 const SPIN_MS = 2000;
 const ELIMINATION_MS = 550;
+const COIN_FLIP_MS = 1200;
 
 const shuffle = (array) => {
   const result = [...array];
@@ -22,6 +28,8 @@ const shuffle = (array) => {
 };
 
 export default function App() {
+  const [currentGame, setCurrentGame] = useState(GAME.FINGER);
+
   const [phase, setPhase] = useState(PHASE.SETUP);
   const [winnerCount, setWinnerCount] = useState(1);
   const [activeTouches, setActiveTouches] = useState([]);
@@ -30,19 +38,23 @@ export default function App() {
   const [eliminatedIds, setEliminatedIds] = useState([]);
   const [isCountdownRunning, setIsCountdownRunning] = useState(false);
 
+  const [coinResult, setCoinResult] = useState(null);
+  const [isFlippingCoin, setIsFlippingCoin] = useState(false);
+
   const activeTouchesRef = useRef([]);
   const startDelayTimerRef = useRef(null);
   const spinTimerRef = useRef(null);
   const eliminationTimerRef = useRef(null);
+  const coinFlipTimerRef = useRef(null);
 
-  const clearTimers = () => {
+  const clearFingerTimers = () => {
     clearTimeout(startDelayTimerRef.current);
     clearTimeout(spinTimerRef.current);
     clearInterval(eliminationTimerRef.current);
   };
 
-  const resetRound = () => {
-    clearTimers();
+  const resetFingerRound = () => {
+    clearFingerTimers();
     setPhase(PHASE.SETUP);
     setActiveTouches([]);
     setParticipantIds([]);
@@ -51,9 +63,25 @@ export default function App() {
     setIsCountdownRunning(false);
   };
 
-  useEffect(() => clearTimers, []);
+  const resetCoin = () => {
+    clearTimeout(coinFlipTimerRef.current);
+    setCoinResult(null);
+    setIsFlippingCoin(false);
+  };
+
+  useEffect(
+    () => () => {
+      clearFingerTimers();
+      clearTimeout(coinFlipTimerRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
+    if (currentGame !== GAME.FINGER) {
+      return;
+    }
+
     if (phase !== PHASE.COLLECTING) {
       return;
     }
@@ -78,9 +106,13 @@ export default function App() {
       setPhase(PHASE.SPINNING);
       setIsCountdownRunning(false);
     }, START_DELAY_MS);
-  }, [activeTouches.length, phase]);
+  }, [activeTouches.length, currentGame, phase]);
 
   useEffect(() => {
+    if (currentGame !== GAME.FINGER) {
+      return;
+    }
+
     if (phase !== PHASE.SPINNING || participantIds.length === 0) {
       return;
     }
@@ -109,10 +141,10 @@ export default function App() {
     }, SPIN_MS);
 
     return () => clearTimeout(spinTimerRef.current);
-  }, [participantIds, phase, winnerCount]);
+  }, [participantIds, phase, winnerCount, currentGame]);
 
   const handleStart = () => {
-    clearTimers();
+    clearFingerTimers();
     setActiveTouches([]);
     setParticipantIds([]);
     setWinnerIds([]);
@@ -122,6 +154,10 @@ export default function App() {
   };
 
   const updateFromTouchEvent = (event) => {
+    if (currentGame !== GAME.FINGER) {
+      return;
+    }
+
     if (![PHASE.COLLECTING, PHASE.SPINNING, PHASE.ELIMINATING].includes(phase)) {
       return;
     }
@@ -136,6 +172,31 @@ export default function App() {
     setActiveTouches(nextTouches);
   };
 
+  const handleGameChange = (game) => {
+    setCurrentGame(game);
+
+    if (game === GAME.FINGER) {
+      resetCoin();
+      return;
+    }
+
+    resetFingerRound();
+  };
+
+  const launchCoinFlip = () => {
+    if (isFlippingCoin) {
+      return;
+    }
+
+    setIsFlippingCoin(true);
+    setCoinResult(null);
+
+    coinFlipTimerRef.current = setTimeout(() => {
+      setCoinResult(Math.random() < 0.5 ? 'Pile' : 'Face');
+      setIsFlippingCoin(false);
+    }, COIN_FLIP_MS);
+  };
+
   return (
     <main
       className="app"
@@ -144,70 +205,113 @@ export default function App() {
       onTouchEnd={updateFromTouchEvent}
       onTouchCancel={updateFromTouchEvent}
     >
-      <section className="overlay">
-        {phase === PHASE.SETUP && (
-          <div className="card">
-            <h1>Finger Picker</h1>
-            <p>Choisissez combien de doigts doivent rester.</p>
+      <header className="topbar">
+        <h1>Jeux de Hasard</h1>
+        <div className="tabs">
+          <button
+            type="button"
+            className={`tab-btn ${currentGame === GAME.FINGER ? 'active' : ''}`}
+            onClick={() => handleGameChange(GAME.FINGER)}
+          >
+            Doigts
+          </button>
+          <button
+            type="button"
+            className={`tab-btn ${currentGame === GAME.COIN ? 'active' : ''}`}
+            onClick={() => handleGameChange(GAME.COIN)}
+          >
+            Pile ou Face
+          </button>
+        </div>
+      </header>
 
-            <div className="counter-wrap">
-              <span className="counter-label">Doigts conservés</span>
-              <div className="counter-row">
-                <button
-                  type="button"
-                  className="counter-btn"
-                  onClick={() => setWinnerCount((prev) => Math.max(1, prev - 1))}
-                >
-                  −
-                </button>
-                <span className="counter-value">{winnerCount}</span>
-                <button
-                  type="button"
-                  className="counter-btn"
-                  onClick={() => setWinnerCount((prev) => Math.min(20, prev + 1))}
-                >
-                  +
-                </button>
+      {currentGame === GAME.FINGER && (
+        <>
+          <section className="overlay">
+            {phase === PHASE.SETUP && (
+              <div className="card">
+                <h2>Sélecteur de doigts</h2>
+                <p>Choisissez combien de doigts doivent rester.</p>
+
+                <div className="counter-wrap">
+                  <span className="counter-label">Doigts conservés</span>
+                  <div className="counter-row">
+                    <button
+                      type="button"
+                      className="counter-btn"
+                      onClick={() => setWinnerCount((prev) => Math.max(1, prev - 1))}
+                    >
+                      −
+                    </button>
+                    <span className="counter-value">{winnerCount}</span>
+                    <button
+                      type="button"
+                      className="counter-btn"
+                      onClick={() => setWinnerCount((prev) => Math.min(20, prev + 1))}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <button type="button" className="start-btn" onClick={handleStart}>Start</button>
               </div>
+            )}
+
+            {phase === PHASE.COLLECTING && (
+              <div className="hint">
+                {activeTouches.length === 0
+                  ? 'Posez vos doigts sur l\'écran 👇'
+                  : 'Le tirage démarre 2s après le dernier doigt ajouté/retiré.'}
+                {isCountdownRunning && <small>Tirage dans ~2s</small>}
+              </div>
+            )}
+
+            {phase === PHASE.RESULT && (
+              <div className="card">
+                <h2>Résultat</h2>
+                <p>{winnerIds.length} doigt(s) conservé(s).</p>
+                <button type="button" className="start-btn" onClick={resetFingerRound}>Recommencer</button>
+              </div>
+            )}
+          </section>
+
+          <section className="touch-layer">
+            {activeTouches.map((touch) => {
+              const isWinner = winnerIds.includes(touch.id);
+              const isEliminated = eliminatedIds.includes(touch.id);
+              const isLoserAtResult = phase === PHASE.RESULT && winnerIds.length > 0 && !isWinner;
+
+              return (
+                <span
+                  key={touch.id}
+                  className={`touch-circle ${phase === PHASE.SPINNING ? 'spinning' : ''} ${isWinner ? 'winner' : ''} ${isEliminated || isLoserAtResult ? 'eliminated' : ''}`}
+                  style={{ transform: `translate(${touch.x - 55}px, ${touch.y - 55}px)` }}
+                />
+              );
+            })}
+          </section>
+        </>
+      )}
+
+      {currentGame === GAME.COIN && (
+        <section className="coin-layout">
+          <div className="card coin-card">
+            <h2>Pile ou Face</h2>
+            <p>Un tirage simple et rapide.</p>
+
+            <div className={`coin ${isFlippingCoin ? 'flipping' : ''}`}>
+              <span>{coinResult ?? '?'}</span>
             </div>
 
-            <button type="button" className="start-btn" onClick={handleStart}>Start</button>
+            <button type="button" className="start-btn" onClick={launchCoinFlip}>
+              {isFlippingCoin ? 'Lancement...' : 'Lancer la pièce'}
+            </button>
+
+            {coinResult && !isFlippingCoin && <p className="coin-result">Résultat : {coinResult}</p>}
           </div>
-        )}
-
-        {phase === PHASE.COLLECTING && (
-          <div className="hint">
-            {activeTouches.length === 0
-              ? 'Posez vos doigts sur l\'écran 👇'
-              : 'Le tirage démarre 2s après le dernier doigt ajouté/retiré.'}
-            {isCountdownRunning && <small>Tirage dans ~2s</small>}
-          </div>
-        )}
-
-        {phase === PHASE.RESULT && (
-          <div className="card">
-            <h2>Résultat</h2>
-            <p>{winnerIds.length} doigt(s) conservé(s).</p>
-            <button type="button" className="start-btn" onClick={resetRound}>Recommencer</button>
-          </div>
-        )}
-      </section>
-
-      <section className="touch-layer">
-        {activeTouches.map((touch) => {
-          const isWinner = winnerIds.includes(touch.id);
-          const isEliminated = eliminatedIds.includes(touch.id);
-          const isLoserAtResult = phase === PHASE.RESULT && winnerIds.length > 0 && !isWinner;
-
-          return (
-            <span
-              key={touch.id}
-              className={`touch-circle ${phase === PHASE.SPINNING ? 'spinning' : ''} ${isWinner ? 'winner' : ''} ${isEliminated || isLoserAtResult ? 'eliminated' : ''}`}
-              style={{ transform: `translate(${touch.x - 55}px, ${touch.y - 55}px)` }}
-            />
-          );
-        })}
-      </section>
+        </section>
+      )}
     </main>
   );
 }

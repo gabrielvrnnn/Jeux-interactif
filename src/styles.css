@@ -29,6 +29,46 @@ body {
   user-select: none;
 }
 
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 14px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topbar h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.3rem;
+  color: #eff5ff;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-btn {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e7f2ff;
+  font-weight: 600;
+}
+
+.tab-btn.active {
+  background: linear-gradient(90deg, #2f80ff, #3ad7ff);
+  color: #fff;
+  border-color: transparent;
+}
+
 .overlay {
   position: absolute;
   inset: 0;
@@ -36,7 +76,7 @@ body {
   display: grid;
   place-items: center;
   pointer-events: none;
-  padding: 24px;
+  padding: 96px 24px 24px;
 }
 
 .card,
@@ -147,6 +187,44 @@ body {
   opacity: 0;
 }
 
+.coin-layout {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 96px 24px 24px;
+}
+
+.coin-card {
+  width: min(92vw, 380px);
+}
+
+.coin {
+  margin: 20px auto 0;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  background: linear-gradient(160deg, #2f80ff, #3ad7ff);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+.coin.flipping {
+  animation: coin-spin 0.2s linear infinite;
+}
+
+.coin-result {
+  margin-top: 14px;
+  font-weight: 700;
+  color: #9ce9ff;
+}
+
 @keyframes pulse {
   0% {
     scale: 1;
@@ -159,5 +237,14 @@ body {
   100% {
     scale: 1;
     box-shadow: 0 0 0 rgba(255, 255, 255, 0.15);
+  }
+}
+
+@keyframes coin-spin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
   }
 }
