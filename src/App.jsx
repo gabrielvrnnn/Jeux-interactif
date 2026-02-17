@@ -31,6 +31,16 @@ const shuffle = (array) => {
 
 const rollDiceSet = (count) => Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
 
+
+const PIP_MAP = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
 export default function App() {
   const [currentGame, setCurrentGame] = useState(GAME.FINGER);
 
@@ -325,7 +335,16 @@ export default function App() {
 
             <div className="dice-grid">
               {diceValues.map((value, index) => (
-                <div key={`${value}-${index}`} className={`die ${isRollingDice ? 'rolling' : ''}`}>{value}</div>
+                <div key={`${value}-${index}`} className={`die ${isRollingDice ? 'rolling' : ''}`}>
+                  <div className="die-face">
+                    {Array.from({ length: 9 }).map((_, cellIndex) => (
+                      <span
+                        key={cellIndex}
+                        className={`pip ${PIP_MAP[value].includes(cellIndex) ? 'on' : ''}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
 
